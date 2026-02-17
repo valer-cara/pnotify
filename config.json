@@ -1,0 +1,10 @@
+[
+	{
+		"name": "sudo running",
+		"match": { "name_regex": "sudo" },
+		"notify_title": "sudo requested",
+		"notify_body": "PID {pid}: {cmdline}",
+		"urgency": "critical"
+	}
+
+]

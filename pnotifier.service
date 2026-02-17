@@ -1,0 +1,15 @@
+[Unit]
+Description=Process Notifier
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/notifier -config %h/.config/pnotifier/config.json
+Restart=on-failure
+RestartSec=5
+
+# D-Bus session bus — standard path on modern systems (dbus-broker / dbus-daemon)
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+
+[Install]
+WantedBy=default.target
