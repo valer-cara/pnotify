@@ -4,6 +4,10 @@ Watches for new processes and sends desktop notifications when they match config
 
 Very tight scoped; but I needed one of these, and vibe coding just made it possible to have it asap.
 
+Alternatives:
+- `execsnoop`in bpf tools (bcc tools, depends on your distro).
+- proc connector is probably an older way to watch processes; eBPF does everything today. The advantage is that proc connector doesn't require any extra capabilities.
+
 ## Requirements
 
 - Go 1.21+
@@ -53,5 +57,13 @@ make uninstall
 
 Stops and removes the service and binary. Config is left untouched.
 
+
 ## Notes
-- deduplication isn't necessary; i've not found any duplicates coming into proc connector for one PID. However, I added it while chasing a bug that proved to be a stale instance running. i'm leaving dedup in for now.
+
+Refs for proc connector (`NETLINK_CONNECTOR`):
+- [[https://www.kernel.org/doc/Documentation/connector/connector.txt][kernel/connector.txt]], [[https://github.com/torvalds/linux/blob/master/drivers/connector/][linux/drivers/connector source]]
+- [[https://nick-black.com/dankwiki/index.php/The_Proc_Connector_and_Socket_Filters][The Proc Connector and Socket Filters - dankwiki]]
+
+
+Note: deduplication isn't necessary; i've not found any duplicates coming into proc connector for one PID. However, I added it while chasing a bug that proved to be a stale instance running. i'm leaving dedup in for now.
+
