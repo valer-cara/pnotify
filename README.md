@@ -61,8 +61,8 @@ Stops and removes the service and binary. Config is left untouched.
 ## Notes
 
 Refs for proc connector (`NETLINK_CONNECTOR`):
-- [[https://www.kernel.org/doc/Documentation/connector/connector.txt][kernel/connector.txt]], [[https://github.com/torvalds/linux/blob/master/drivers/connector/][linux/drivers/connector source]]
-- [[https://nick-black.com/dankwiki/index.php/The_Proc_Connector_and_Socket_Filters][The Proc Connector and Socket Filters - dankwiki]]
+- [kernel/connector.txt](https://www.kernel.org/doc/Documentation/connector/connector.txt), [linux/drivers/connector source](https://github.com/torvalds/linux/blob/master/drivers/connector/)
+- [The Proc Connector and Socket Filters - dankwiki](https://nick-black.com/dankwiki/index.php/The_Proc_Connector_and_Socket_Filters)
 
 
 Note: deduplication isn't necessary; i've not found any duplicates coming into proc connector for one PID. However, I added it while chasing a bug that proved to be a stale instance running. i'm leaving dedup in for now.
