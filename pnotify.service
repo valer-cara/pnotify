@@ -1,10 +1,10 @@
 [Unit]
-Description=Process Notifier
+Description=Process Notifier (pnotify)
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/notifier -config %h/.config/pnotifier/config.json
+ExecStart=%h/.local/bin/pnotify -config %h/.config/pnotify/config.json
 Restart=on-failure
 RestartSec=5
 

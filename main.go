@@ -3,12 +3,12 @@
 //
 // Build:
 //
-//	go build -o notifier .
+//	go build -o pnotify .
 //
 // Usage:
 //
-//	./notifier                          # uses ./config.json
-//	./notifier -config criteria.json
+//	./notify                          # uses ./config.json
+//	./notify -config criteria.json
 package main
 
 import (

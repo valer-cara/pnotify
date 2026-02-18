@@ -1,6 +1,6 @@
-BINARY     = notifier
+BINARY     = pnotify
 BIN_DIR    = $(HOME)/.local/bin
-CONFIG_DIR = $(HOME)/.config/pnotifier
+CONFIG_DIR = $(HOME)/.config/pnotify
 UNIT_DIR   = $(HOME)/.config/systemd/user
 
 .PHONY: build install uninstall
@@ -15,12 +15,12 @@ install: build
 	else \
 		echo "$(CONFIG_DIR)/config.json already exists, skipping"; \
 	fi
-	install -Dm644 pnotifier.service $(UNIT_DIR)/pnotifier.service
+	install -Dm644 pnotify.service $(UNIT_DIR)/pnotify.service
 	systemctl --user daemon-reload
-	systemctl --user enable --now pnotifier.service
+	systemctl --user enable --now pnotify.service
 
 uninstall:
-	systemctl --user disable --now pnotifier.service || true
+	systemctl --user disable --now pnotify.service || true
 	rm -f $(BIN_DIR)/$(BINARY)
-	rm -f $(UNIT_DIR)/pnotifier.service
+	rm -f $(UNIT_DIR)/pnotify.service
 	systemctl --user daemon-reload

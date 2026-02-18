@@ -1,6 +1,8 @@
-# pnotifier
+# pnotify - process notify
 
 Watches for new processes and sends desktop notifications when they match configurable rules. Useful for alerting on unexpected process launches (e.g. `sudo`, browsers, scripts).
+
+Very tight scoped; but I needed one of these, and vibe coding just made it possible to have it asap.
 
 ## Requirements
 
@@ -13,11 +15,11 @@ Watches for new processes and sends desktop notifications when they match config
 make install
 ```
 
-Installs the binary to `~/.local/bin/notifier`, drops a default config at `~/.config/pnotifier/config.json` (skipped if one already exists), and enables the systemd user service.
+Installs the binary to `~/.local/bin/pnotify`, drops a default config at `~/.config/pnotify/config.json` (skipped if one already exists), and enables the systemd user service.
 
 ## Config
 
-`~/.config/pnotifier/config.json` — array of rules, reloaded automatically on save.
+`~/.config/pnotify/config.json` — array of rules, reloaded automatically on save.
 
 ```json
 [

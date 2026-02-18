@@ -1,4 +1,4 @@
-module notifier
+module github.com/valer-cara/pnotify
 
 go 1.21
 
