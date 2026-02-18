@@ -9,10 +9,10 @@
 //
 //	./notifier                          # uses ./config.json
 //	./notifier -config criteria.json
-//	./notifier -interval 1.5 -config criteria.json
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -30,6 +30,8 @@ import (
 	"github.com/godbus/dbus/v5"
 	"github.com/shirou/gopsutil/v3/process"
 )
+
+const fallbackPollInterval = 2 * time.Second
 
 // ---------------------------------------------------------------------------
 // Config JSON structures
@@ -170,21 +172,19 @@ func sendNotification(title, body, urgency string) error {
 // ---------------------------------------------------------------------------
 
 type ProcessWatcher struct {
-	configPath   string
-	pollInterval time.Duration
-	mu           sync.RWMutex
-	criteria     []*Criterion
+	configPath string
+	mu         sync.RWMutex
+	criteria   []*Criterion
 }
 
-func newProcessWatcher(configPath string, criteria []*Criterion, pollInterval time.Duration) *ProcessWatcher {
+func newProcessWatcher(configPath string, criteria []*Criterion) *ProcessWatcher {
 	abs, err := filepath.Abs(configPath)
 	if err != nil {
 		abs = configPath
 	}
 	return &ProcessWatcher{
-		configPath:   abs,
-		pollInterval: pollInterval,
-		criteria:     criteria,
+		configPath: abs,
+		criteria:   criteria,
 	}
 }
 
@@ -249,10 +249,7 @@ func (w *ProcessWatcher) run() {
 		names[i] = c.Name
 	}
 	w.mu.RUnlock()
-	log.Printf("Process watcher started. Polling every %v.", w.pollInterval)
 	log.Printf("Watching %d criteria: %v", len(names), names)
-
-	seen := w.snapshot()
 
 	// Config file hot-reload via fsnotify.
 	fw, err := fsnotify.NewWatcher()
@@ -288,7 +285,38 @@ func (w *ProcessWatcher) run() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	ticker := time.NewTicker(w.pollInterval)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	pidCh, err := listenProcExec(ctx)
+	if err != nil {
+		log.Printf("Warning: netlink CN_PROC unavailable (%v), falling back to polling every %v", err, fallbackPollInterval)
+		w.runPolling(sigCh)
+		return
+	}
+	log.Printf("Process watcher started in netlink CN_PROC mode.")
+
+	for {
+		select {
+		case pid, ok := <-pidCh:
+			if !ok {
+				log.Printf("Netlink channel closed, falling back to polling every %v", fallbackPollInterval)
+				w.runPolling(sigCh)
+				return
+			}
+			w.checkNew(map[int32]struct{}{pid: {}})
+		case s := <-sigCh:
+			log.Printf("Received signal %v, stopping.", s)
+			return
+		}
+	}
+}
+
+func (w *ProcessWatcher) runPolling(sigCh chan os.Signal) {
+	log.Printf("Process watcher polling every %v.", fallbackPollInterval)
+	seen := w.snapshot()
+
+	ticker := time.NewTicker(fallbackPollInterval)
 	defer ticker.Stop()
 
 	for {
@@ -317,7 +345,6 @@ func (w *ProcessWatcher) run() {
 // ---------------------------------------------------------------------------
 
 func main() {
-	interval := flag.Float64("interval", 2.0, "Polling interval in seconds")
 	configFile := flag.String("config", "", "Path to JSON config file (default: ./config.json)")
 	flag.Parse()
 
@@ -341,10 +368,6 @@ func main() {
 		log.Fatalf("Invalid config: %v", err)
 	}
 
-	watcher := newProcessWatcher(
-		configPath,
-		criteria,
-		time.Duration(float64(time.Second)**interval),
-	)
+	watcher := newProcessWatcher(configPath, criteria)
 	watcher.run()
 }
