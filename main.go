@@ -175,6 +175,9 @@ type ProcessWatcher struct {
 	configPath string
 	mu         sync.RWMutex
 	criteria   []*Criterion
+
+	dedupMu    sync.Mutex
+	recentPIDs map[int32]time.Time
 }
 
 func newProcessWatcher(configPath string, criteria []*Criterion) *ProcessWatcher {
@@ -185,6 +188,7 @@ func newProcessWatcher(configPath string, criteria []*Criterion) *ProcessWatcher
 	return &ProcessWatcher{
 		configPath: abs,
 		criteria:   criteria,
+		recentPIDs: make(map[int32]time.Time),
 	}
 }
 
@@ -219,6 +223,26 @@ func (w *ProcessWatcher) snapshot() map[int32]struct{} {
 	return m
 }
 
+const dedupWindow = 2 * time.Second
+
+// seenRecently returns true if pid was already notified within dedupWindow,
+// otherwise records it and returns false. Old entries are pruned on each call.
+func (w *ProcessWatcher) seenRecently(pid int32) bool {
+	w.dedupMu.Lock()
+	defer w.dedupMu.Unlock()
+	now := time.Now()
+	if t, ok := w.recentPIDs[pid]; ok && now.Sub(t) < dedupWindow {
+		return true
+	}
+	w.recentPIDs[pid] = now
+	for p, t := range w.recentPIDs {
+		if now.Sub(t) >= dedupWindow {
+			delete(w.recentPIDs, p)
+		}
+	}
+	return false
+}
+
 func (w *ProcessWatcher) checkNew(newPIDs map[int32]struct{}) {
 	w.mu.RLock()
 	criteria := make([]*Criterion, len(w.criteria))
@@ -226,6 +250,9 @@ func (w *ProcessWatcher) checkNew(newPIDs map[int32]struct{}) {
 	w.mu.RUnlock()
 
 	for pid := range newPIDs {
+		if w.seenRecently(pid) {
+			continue
+		}
 		proc, err := process.NewProcess(pid)
 		if err != nil {
 			continue // process already gone
