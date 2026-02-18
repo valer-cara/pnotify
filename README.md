@@ -52,3 +52,6 @@ make uninstall
 ```
 
 Stops and removes the service and binary. Config is left untouched.
+
+## Notes
+- deduplication isn't necessary; i've not found any duplicates coming into proc connector for one PID. However, I added it while chasing a bug that proved to be a stale instance running. i'm leaving dedup in for now.
